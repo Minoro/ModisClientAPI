@@ -18,6 +18,60 @@ class ModisClient:
         self._collections = {}
         self._products = {}
 
+    def search(self, search_params : dict):
+
+        if 'collection' in search_params:
+            collection = self.collection(search_params['collection'])
+            collections = [ collection ]
+        else:
+            collections = list(self._collections.values)
+
+        if 'product' not in search_params:
+            search_params['product'] = ''
+
+        products = []
+        for collection in collections:
+            products += self.get_products_from_collection(collection['name'])
+            
+            if collection.has_product(search_params['product']):
+                products = [ collection.product(search_params['product']) ]
+                break
+        
+        days = []
+        if 'date' in search_params:
+            for product in products:
+                days += product.get_date(search_params['date'])
+                
+        elif 'year' in search_params:
+            
+            for product in products:
+                if 'day_of_year' in search_params:
+                    days += product.year(search_params['year']).day_of_year(search_params['day_of_year'])
+                else:
+                    days += product.year(search_params['year']).days
+
+        elif 'start_date' in search_params and 'end_date' in search_params:
+            
+            for product in products:
+                days += product.get_days_date_range(search_params['start_date'], search_params['end_date'])
+
+        else:
+            for product in products:
+                for year in product.years:
+                    days += year.days
+
+        tiles = []
+        if 'position' in search_params:
+            for day in days:
+                tile = day.get_image_tile(search_params['position'])
+                tiles.append(tile)
+        else:
+            for day in days:
+                tiles += day.images
+
+        return tiles
+
+
     @property
     def collections(self):
         if len(self._collections) > 0:
@@ -34,24 +88,6 @@ class ModisClient:
 
         return list(self._collections.values())
 
-
-    def get_products_from_collection(self, collection_name):
-        
-        if collection_name in self._products.keys() and self._products[collection_name] is not None:
-            return self._products[collection_name]
-
-        collection = self.get_collection(collection_name)
-
-        products = self._http_client.get(url_json_file(collection['url']))
-
-        self._products[collection_name] = build_products_collection(products, collection, token=self._token)
-
-        for product in self._products[collection_name]:
-            product['url'] = url_join(collection['url'], product['name'])
-
-        return self._products[collection_name]
-
-
     def collection(self, collection_name):
 
         if len(self._collections) == 0:
@@ -61,5 +97,29 @@ class ModisClient:
             raise ValueError('Collection not found')
         
         return self._collections[collection_name]
+
+    def get_products(self):
+        if len(self._collections) == 0:
+            self.get_collections()
+
+        products = []
+        for colleciton_name in self._collections:    
+            products += self.get_products_from_collection(colleciton_name)
+
+        return products   
+
+    def get_products_from_collection(self, collection_name):
+        
+        if collection_name in self._products.keys() and self._products[collection_name] is not None:
+            return self._products[collection_name]
+
+        collection = self.collection(collection_name)
+
+        self._products[collection_name] = collection.products
+
+        return self._products[collection_name]
+
+
+
 
 

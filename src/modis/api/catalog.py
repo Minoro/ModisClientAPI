@@ -102,6 +102,12 @@ class Collection(Catalog):
 
         return self._products[product_name]
 
+    def has_product(self, product_name : str):
+        if len(self._products) == 0:
+            self.get_products()
+
+        return product_name in self._products
+
     def get_url(self):
         if 'name' not in self:
             return
@@ -123,7 +129,7 @@ class Product(Catalog):
 
         self.token = token
         self._collection = collection
-
+        self['collection_name'] = collection['name']
         self._years = {}
     
     @property
@@ -175,17 +181,25 @@ class Product(Catalog):
 
         return days
 
+
+    def get_date(self, date):
+        if type(date) == str:
+            date = datetime.datetime.strptime(date, '%Y-%m-%d')
+
+        return self.year(date.year).day_of_year(date.timetuple().tm_yday)
+
 class ProductYear(Catalog):
 
     def __init__(self, data={}, product=None, token=''):
         
         if type(data) == str:
-            data = {'name' : data}
+            data = {'name' : data}  
 
         super(ProductYear, self).__init__(data or {}, token='')
 
         self._token = token
         self._product = product
+        self['product_name'] = product['name']
         self._days = {}
 
         self.parse_year_from_url()
@@ -250,8 +264,10 @@ class ProductDay(Catalog):
 
         self._token = token
         self._product_year = product_year
+        self['product_name'] = product_year['product_name']
+        self['product_year'] = product_year['name']
+        
         self._images = {}
-
 
         self.parse_url()
 
@@ -282,12 +298,12 @@ class ProductDay(Catalog):
         return list(self._images.values())
 
 
-    def image(self, images_name):
+    def image(self, image_name):
 
         if len(self._images) == 0:
             self.get_images()
 
-        return self._images[images_name]
+        return self._images[image_name]
 
     def parse_image_properties_from_name(self, image_name):
         image_properties = image_name.split('.')
@@ -338,6 +354,9 @@ class ProductDay(Catalog):
             raise ValueError('Vertical position must be between 0 and 17')
 
         for image in self.images:
+            if 'tile_position' not in image:
+                continue
+            
             if image['horizontal_position'] == horizontal_position \
                 and image['vertical_position'] == vertical_position:
                 
