@@ -4,6 +4,9 @@ from .catalog import *
 
 
 class ModisClient:
+    """A Modis API Client to search and download Modis products and Images
+    It uses an API Token to send requests and download images
+    """
 
     def __init__(self, token=''):
         self._token = token
@@ -18,7 +21,24 @@ class ModisClient:
         self._collections = {}
         self._products = {}
 
-    def search(self, search_params : dict):
+    def search(self, search_params : dict) -> list:
+        """Search a Modis image. This method filter the images based on the search_params.
+        Can be passed the 'collection' name to select a specific Modis Collection.
+        Can be passed the 'product' name to select a specific Product of the Collection.
+        If a specific 'date' datetime is informed it will be used to select all images available to that date.
+        Or it can be informed a 'year' to filter the images.
+        If the 'year' is informed it can be used the 'day_of_year' to select a specific day.
+        If the 'start_date' and the 'end_date' is informed will be select a range of images available between these dates.
+        Otherwise all dates will be used
+        It can be passed a 'position' tuple with the horizontal and vertical position of the desired tile.
+        Some products don't have the 'position' option.
+
+        Args:
+            search_params (dict): Options to be used to filter the images
+
+        Returns:
+            list : List of filtered tiles
+        """
 
         if 'collection' in search_params:
             collection = self.collection(search_params['collection'])
@@ -88,7 +108,18 @@ class ModisClient:
 
         return list(self._collections.values())
 
-    def collection(self, collection_name):
+    def collection(self, collection_name : str) -> Collection:
+        """Select a specific collection by name.
+
+        Args:
+            collection_name (str): Collection name
+
+        Raises:
+            ValueError: If no collection are found
+
+        Returns:
+            Collection: The collection found
+        """
 
         if len(self._collections) == 0:
             self.get_collections()
@@ -108,7 +139,15 @@ class ModisClient:
 
         return products   
 
-    def get_products_from_collection(self, collection_name):
+    def get_products_from_collection(self, collection_name) -> list:
+        """Get the products from a Collection by the collection name
+
+        Args:
+            collection_name (str): Collection name
+
+        Returns:
+            list: Products available in the Collection
+        """
         
         if collection_name in self._products.keys() and self._products[collection_name] is not None:
             return self._products[collection_name]
@@ -118,8 +157,4 @@ class ModisClient:
         self._products[collection_name] = collection.products
 
         return self._products[collection_name]
-
-
-
-
 
