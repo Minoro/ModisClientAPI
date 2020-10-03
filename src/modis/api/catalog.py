@@ -80,7 +80,7 @@ class Catalog(dict):
 
     @property
     def data(self):
-        if self._data is not None:
+        if len(self._data) > 0:
             return self._data
 
         return self.get_data_available()
