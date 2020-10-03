@@ -66,7 +66,7 @@ class ModisClient:
             
             for product in products:
                 if 'day_of_year' in search_params:
-                    days += product.year(search_params['year']).day_of_year(search_params['day_of_year'])
+                    days += [ product.year(search_params['year']).day_of_year(search_params['day_of_year']) ]
                 else:
                     days += product.year(search_params['year']).days
 
