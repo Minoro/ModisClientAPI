@@ -185,7 +185,7 @@ class Product(Catalog):
         if type(data) == str:
             data = {'name' : data}
 
-        super(Product, self).__init__(data or {}, token='')
+        super(Product, self).__init__(data or {}, token=token)
 
         if type(collection) == str:
             collection = Collection(collection, token=token)
@@ -262,8 +262,8 @@ class Product(Catalog):
             day_of_year = day.timetuple().tm_yday
 
             product = self.year(year).day_of_year(day_of_year)
-
-            days.append(product)
+            if product is not None:
+                days.append(product)
 
         return days
 
@@ -292,7 +292,7 @@ class ProductYear(Catalog):
         if type(data) == str:
             data = {'name' : data}  
 
-        super(ProductYear, self).__init__(data or {}, token='')
+        super(ProductYear, self).__init__(data or {}, token=token)
 
         self._token = token
         self._product = product
@@ -369,8 +369,11 @@ class ProductYear(Catalog):
             self.get_days()
         
         day_of_year = str(day_of_year)
-        return self._days[day_of_year]
-    
+        if self.has_day_of_year(day_of_year):
+            return self._days[day_of_year]
+
+        return None
+
     def has_day_of_year(self, day_of_year) -> bool:
         """Check if the product has the day of year collected
 
@@ -395,7 +398,7 @@ class ProductDay(Catalog):
         if type(data) == str:
             data = {'name' : data}
 
-        super(ProductDay, self).__init__(data or {}, token='')
+        super(ProductDay, self).__init__(data or {}, token=token)
 
         self._token = token
         self._product_year = product_year
